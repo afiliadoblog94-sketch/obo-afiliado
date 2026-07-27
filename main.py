@@ -1,4 +1,7 @@
 import os
+import json
+import gspread
+from google.oauth2.service_account import Credentials
 from groq import Groq
 
 def testar_robo_com_sheets():
@@ -9,16 +12,23 @@ def testar_robo_com_sheets():
     if not groq_api_key:
         raise ValueError("ERRO: A chave GROQ_API_KEY não foi encontrada nos segredos do GitHub.")
 
-    # 2. Validando credenciais do Google Client
-    client_id = os.environ.get("GOOGLE_CLIENT_ID")
-    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
-    
-    if client_id and client_secret:
-        print("Credenciais do Google Client ID e Secret carregadas com sucesso.")
-    else:
-        print("Aviso: Credenciais do Google Client não totalmente preenchidas.")
+    # 2. Validando credenciais do Google Sheets (Service Account JSON)
+    google_creds_json = os.environ.get("GCP_SERVICE_ACCOUNT_JSON")
+    if not google_creds_json:
+        raise ValueError("ERRO: O segredo GCP_SERVICE_ACCOUNT_JSON não foi encontrado.")
 
     try:
+        # Configurando a autenticação do Google Sheets via Conta de Serviço
+        scope = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        creds_dict = json.loads(google_creds_json)
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+        gc = gspread.authorize(creds)
+        
+        print("Autenticação com o Google Sheets realizada com sucesso via Conta de Serviço.")
+
         # 3. Gerando conteúdo de tecnologia com a Groq
         client = Groq(api_key=groq_api_key)
         print("Gerando pauta e artigo de tecnologia via Groq...")
@@ -35,10 +45,15 @@ def testar_robo_com_sheets():
         
         print("\n--- Conteúdo Gerado pela IA ---")
         print(conteudo_gerado)
-        print---------------------------------")
+        print("---------------------------------")
         
-        # 4. Estrutura pronta para salvar no Google Sheets
-        print("Estrutura pronta para registrar os dados na planilha do Google Sheets.")
+        # 4. Exemplo de como abrir a planilha e salvar os dados (substitua 'NomeDaSuaPlanilha' pelo nome exato do seu arquivo)
+        # 
+        # planilha = gc.open("NomeDaSuaPlanilha")
+        # aba = planilha.sheet1
+        # aba.append_row([conteudo_gerado, "Pendente"])
+        # print("Dados salvos na planilha com sucesso!")
+
         print("Robô executado com sucesso absoluto!")
         
     except Exception as e:
