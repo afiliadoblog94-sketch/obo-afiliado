@@ -44,10 +44,10 @@ def executar_robo_afiliado():
         print(conteudo_gerado)
         print("------------------------------------")
 
-        # 3. Conexão via OAuth no Google Sheets
-        print("Conectando ao Google Sheets via OAuth...")
+        # 3. Conexão e Gravação na Planilha
+        print("Conectando ao Google Sheets...")
         
-        # Estrutura de credenciais OAuth para ambiente automatizado
+        # Utilizando o token armazenado nos secrets do GitHub
         credentials = Credentials(
             token=None,
             refresh_token=os.environ.get("GOOGLE_REFRESH_TOKEN"),
@@ -58,7 +58,7 @@ def executar_robo_afiliado():
         
         gc = gspread.authorize(credentials)
         
-        # Abre a planilha pelo nome exato
+        # Abre a planilha pelo nome exato cadastrado no Google Drive
         planilha = gc.open("Planilha Afiliado")
         aba = planilha.sheet1
         
