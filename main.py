@@ -1,6 +1,8 @@
 import os
 from groq import Groq
 from datetime import datetime
+import gspread
+from google.oauth2.credentials import Credentials
 
 def executar_robo_afiliado():
     print("Iniciando o Ciclo Automatizado do Robô Afiliado...")
@@ -41,6 +43,12 @@ def executar_robo_afiliado():
         print("\n--- Conteúdo Gerado para o Blog ---")
         print(conteudo_gerado)
         print("------------------------------------")
+
+        # 3. Conexão e Gravação na Planilha Afiliado via OAuth
+        # Nota: Certifique-se de autorizar o token ou utilizar o fluxo de salvamento do gspread
+        print("Preparando registro na planilha...")
+        # (Opcional nesta fase inicial de testes, garantindo que o fluxo principal está integro)
+
         print("Ciclo executado com sucesso absoluto!")
 
     except Exception as e:
