@@ -1,56 +1,70 @@
 import os
 import json
 import gspread
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
+from google.oauth2.service_account import Credentials
 from groq import Groq
+from datetime import datetime
 
-def testar_robo_com_sheets():
-    print("Iniciando o Robô Afiliado com Groq e Google Sheets (OAuth 2.0)...")
+def executar_robo_afiliado():
+    print("Iniciando o Ciclo Automatizado do Robô Afiliado...")
     
-    # 1. Validando chave da Groq
+    # 1. Validação de Segredos
     groq_api_key = os.environ.get("GROQ_API_KEY")
-    if not groq_api_key:
-        raise ValueError("ERRO: A chave GROQ_API_KEY não foi encontrada nos segredos do GitHub.")
-
-    # 2. Validando credenciais do Google OAuth
-    client_id = os.environ.get("GOOGLE_CLIENT_ID")
-    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    google_creds_json = os.environ.get("GCP_SERVICE_ACCOUNT_JSON")
     
-    if not client_id or not client_secret:
-        raise ValueError("ERRO: As credenciais GOOGLE_CLIENT_ID ou GOOGLE_CLIENT_SECRET não foram encontradas.")
+    if not groq_api_key:
+        raise ValueError("ERRO: GROQ_API_KEY não configurada.")
+    if not google_creds_json:
+        raise ValueError("ERRO: GCP_SERVICE_ACCOUNT_JSON não configurada.")
 
     try:
-        # Configurando a autenticação do Google Sheets via OAuth 2.0
-        # O token de acesso persistente pode ser injetado via variável de ambiente ou gerado pelo fluxo
-        print("Configurando autenticação OAuth 2.0 para o Google Sheets...")
-        
-        # Exemplo estruturado para conexão OAuth utilizando as credenciais do cliente
-        # (Certifique-se de salvar o token de atualização gerado nas secrets se necessário para automação completa)
-        
-        # 3. Gerando conteúdo de tecnologia com a Groq
+        # 2. Conexão com Google Sheets
+        scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+        creds_dict = json.loads(google_creds_json)
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+        gc = gspread.authorize(creds)
+        print("Conexão com Google Sheets estabelecida com sucesso.")
+
+        # 3. Geração de Conteúdo via Groq (Padrão Long-Tail | Dor/Desejo | Nome do Blog)
         client = Groq(api_key=groq_api_key)
-        print("Gerando pauta e artigo de tecnologia via Groq...")
+        print("Gerando artigo otimizado para conversão...")
+        
+        prompt_sistema = "Você é um especialista em SEO internacional e marketing de afiliados."
+        prompt_usuario = (
+            "Crie um título de artigo seguindo estritamente a fórmula: "
+            "[Termo de pesquisa long-tail] | [Dor ou Desejo do usuário] | [Forma & Cacau Global] "
+            "e escreva o parágrafo inicial de introdução focado em conversão de afiliados."
+        )
         
         resposta = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
-                {"role": "system", "content": "Você é um especialista em marketing de afiliados."},
-                {"role": "user", "content": "Crie uma sugestão de título de artigo focado em placa de vídeo custo-benefício e um resumo curto de 1 linha."}
+                {"role": "system", "content": prompt_sistema},
+                {"role": "user", "content": prompt_usuario}
             ]
         )
         
         conteudo_gerado = resposta.choices[0].message.content
+        data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        print("\n--- Conteúdo Gerado pela IA ---")
+        print("\n--- Conteúdo Gerado para o Blog ---")
         print(conteudo_gerado)
-        print("---------------------------------")
-        
-        print("Robô executado com sucesso absoluto!")
-        
+        print("------------------------------------")
+
+        # 4. Salvando dados na Planilha Mestra "Planilha Afiliado"
+        try:
+            planilha = gc.open("Planilha Afiliado")
+            aba = planilha.sheet1
+            aba.append_row([data_atual, conteudo_gerado, "Publicado - Topo de Funil", "Pendente Indexação"])
+            print("Dados registrados na planilha 'Planilha Afiliado' com sucesso!")
+        except Exception as sheet_err:
+            print(f"AVISO: Não foi possível gravar na planilha: {sheet_err}")
+
+        print("Ciclo executado com sucesso absoluto!")
+
     except Exception as e:
-        print(f"Erro crítico durante a execução: {e}")
+        print(f"Erro crítico no fluxo: {e}")
         raise e
 
 if __name__ == "__main__":
-    testar_robo_com_sheets()
+    executar_robo_afiliado()
