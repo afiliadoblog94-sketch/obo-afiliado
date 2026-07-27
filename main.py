@@ -11,11 +11,14 @@ def executar_robo_afiliado():
     groq_api_key = os.environ.get("GROQ_API_KEY")
     client_id = os.environ.get("GOOGLE_CLIENT_ID")
     client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    refresh_token = os.environ.get("GOOGLE_REFRESH_TOKEN")
     
     if not groq_api_key:
         raise ValueError("ERRO: GROQ_API_KEY não configurada.")
     if not client_id or not client_secret:
         raise ValueError("ERRO: Credenciais do Google OAuth não configuradas.")
+    if not refresh_token:
+        raise ValueError("ERRO: GOOGLE_REFRESH_TOKEN não configurado nos Secrets do GitHub.")
 
     try:
         # 2. Geração de Conteúdo via Groq
@@ -47,10 +50,9 @@ def executar_robo_afiliado():
         # 3. Conexão e Gravação na Planilha
         print("Conectando ao Google Sheets...")
         
-        # Utilizando o token armazenado nos secrets do GitHub
         credentials = Credentials(
             token=None,
-            refresh_token=os.environ.get("GOOGLE_REFRESH_TOKEN"),
+            refresh_token=refresh_token,
             token_uri="https://oauth2.googleapis.com/token",
             client_id=client_id,
             client_secret=client_secret
@@ -58,7 +60,7 @@ def executar_robo_afiliado():
         
         gc = gspread.authorize(credentials)
         
-        # Abre a planilha pelo nome exato cadastrado no Google Drive
+        # Abre a planilha pelo nome exato
         planilha = gc.open("Planilha Afiliado")
         aba = planilha.sheet1
         
