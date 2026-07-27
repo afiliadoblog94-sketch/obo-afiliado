@@ -16,7 +16,7 @@ def executar_git_push():
         
         status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=True)
         if status.stdout.strip():
-            subprocess.run(["git", "commit", "m", "🤖 [Bot 100% Automático] Blog criado e artigo publicado"], check=True)
+            subprocess.run(["git", "commit", "-m", "🤖 [Bot Master] Artigo otimizado, em conformidade com Google e alta conversão"], check=True)
             subprocess.run(["git", "push"], check=True)
             print("Arquivo CSV global enviado com sucesso para o GitHub!")
         else:
@@ -109,24 +109,23 @@ def publicar_no_blogger(titulo, conteudo, blog_id):
         return False
 
 def executar_robo_global():
-    print("Iniciando o Ciclo 100% Automatizado (Global / Múltiplos Países)...")
+    print("Iniciando o Ciclo 100% Automatizado com Inteligência de Pico e SEO (Global)...")
     
     groq_api_key = os.environ.get("GROQ_API_KEY")
     if not groq_api_key:
         raise ValueError("ERRO: GROQ_API_KEY não configurada nos Secrets do GitHub.")
 
-    # Matriz Global (O robô gerencia tudo dinamicamente)
     paises_alvo = [
-        {"pais": "Brasil", "idioma": "pt-BR", "marketplace": "Amazon Brasil / Mercado Livre"},
-        {"pais": "França", "idioma": "fr", "marketplace": "Amazon.fr"},
-        {"pais": "Espanha", "idioma": "es", "marketplace": "Amazon.es"},
-        {"pais": "Estados Unidos", "idioma": "en", "marketplace": "Amazon.com"},
-        {"pais": "Alemanha", "idioma": "de", "marketplace": "Amazon.de"},
-        {"pais": "Itália", "idioma": "it", "marketplace": "Amazon.it"},
-        {"pais": "Reino Unido", "idioma": "en", "marketplace": "Amazon.co.uk"},
-        {"pais": "México", "idioma": "es", "marketplace": "Amazon.com.mx"},
-        {"pais": "Canadá", "idioma": "en", "marketplace": "Amazon.ca"},
-        {"pais": "Japão", "idioma": "ja", "marketplace": "Amazon.co.jp"}
+        {"pais": "Brasil", "idioma": "pt-BR", "marketplace": "Amazon Brasil / Mercado Livre", "fuso": "America/Sao_Paulo"},
+        {"pais": "França", "idioma": "fr", "marketplace": "Amazon.fr", "fuso": "Europe/Paris"},
+        {"pais": "Espanha", "idioma": "es", "marketplace": "Amazon.es", "fuso": "Europe/Madrid"},
+        {"pais": "Estados Unidos", "idioma": "en", "marketplace": "Amazon.com", "fuso": "America/New_York"},
+        {"pais": "Alemanha", "idioma": "de", "marketplace": "Amazon.de", "fuso": "Europe/Berlin"},
+        {"pais": "Itália", "idioma": "it", "marketplace": "Amazon.it", "fuso": "Europe/Rome"},
+        {"pais": "Reino Unido", "idioma": "en", "marketplace": "Amazon.co.uk", "fuso": "Europe/London"},
+        {"pais": "México", "idioma": "es", "marketplace": "Amazon.com.mx", "fuso": "America/Mexico_City"},
+        {"pais": "Canadá", "idioma": "en", "marketplace": "Amazon.ca", "fuso": "America/Toronto"},
+        {"pais": "Japão", "idioma": "ja", "marketplace": "Amazon.co.jp", "fuso": "Asia/Tokyo"}
     ]
 
     alvo_selecionado = random.choice(paises_alvo)
@@ -139,16 +138,20 @@ def executar_robo_global():
     try:
         client = Groq(api_key=groq_api_key)
         
-        # 1. IA define o subnicho e a identidade do blog autonomamente
-        print(f"IA gerando identidade comercial para o mercado de {pais}...")
+        # 1. IA analisa o mercado, define o subnicho, o melhor horário de pico e a identidade SEO
+        print(f"IA calculando o melhor horário de postagem, diretrizes e subnicho para {pais}...")
         prompt_identidade = (
-            f"Atue como um Estrategista Chefe de Marketing Digital e SEO focado no mercado da {pais}. "
-            f"Selecione de forma autônoma 1 subnicho altamente lucrativo utilizando o {marketplace}. "
-            "Crie um nome comercial atraente, curto e sem caracteres especiais para um blog. "
-            "Responda estritamente no seguinte formato de texto simples:\n"
+            f"Atue como um Especialista Sênior em Algoritmos de Indexação do Google, SEO Internacional e Copywriting de Alta Conversão. "
+            f"Para o mercado da {pais} usando o marketplace {marketplace}:\n"
+            "1. Selecione um subnicho altamente lucrativo.\n"
+            "2. Determine o MELHOR HORÁRIO do dia (no fuso local) em que o público deste nicho está mais ativo para consumir conteúdo e comprar.\n"
+            "3. Crie um nome comercial limpo e sem caracteres especiais para o blog.\n"
+            "4. Crie um título long-tail altamente pesquisado (SEO) para o artigo.\n"
+            "Responda estritamente no seguinte formato:\n"
             "SUBNICHO: [Nome do Subnicho]\n"
+            "MELHOR_HORARIO: [Ex: 19:30 - Pico de tráfego mobile]\n"
             "NOME_BLOG: [Nome Criativo para o Blog]\n"
-            "TEMA_ARTIGO: [Título long-tail de alta conversão para o primeiro artigo]"
+            "TEMA_ARTIGO: [Título otimizado para indexação]"
         )
         
         resposta_id = client.chat.completions.create(
@@ -157,10 +160,9 @@ def executar_robo_global():
         )
         
         dados_criacao = resposta_id.choices[0].message.content
-        print(f"\n--- Estratégia Definida ---\n{dados_criacao}\n-----------------------------")
+        print(f"\n--- Inteligência Estratégica Aplicada ---\n{dados_criacao}\n------------------------------------------")
 
-        # Extrai os dados gerados pela IA
-        nome_blog = "Afiliado Global"
+        nome_blog = "Global Market"
         titulo_artigo = "Artigo Exclusivo"
         for linha in dados_criacao.split('\n'):
             if "NOME_BLOG:" in linha:
@@ -168,21 +170,25 @@ def executar_robo_global():
             if "TEMA_ARTIGO:" in linha:
                 titulo_artigo = linha.replace("TEMA_ARTIGO:", "").strip()
 
-        # 2. Criação automática do Blog no Blogger via API (Zero cliques manuais)
+        # 2. Criação Automática do Blog
         blog_id = criar_blog_no_blogger(nome_blog, idioma)
 
-        # 3. Geração do Artigo Otimizado em Funil
-        print("Gerando o artigo estruturado com links de afiliados...")
+        # 3. Geração do Artigo Rigorosamente dentro das Diretrizes do Google e Foco em Conversão
+        print("Gerando o artigo otimizado com foco em E-E-A-T, indexação e alta conversão...")
         prompt_sistema = (
-            f"Você é um redator sênior de SEO, especialista em copywriting para conversão em e-commerce ({marketplace})."
+            f"Você é um redator sênior de SEO e conformidade com as diretrizes de qualidade do Google (E-E-A-T e Helpful Content). "
+            f"Escreva conteúdos originais, profundos, estruturados com tags HTML limpas (h2, h3, p, ul, li), livres de termos robóticos genéricos, "
+            f"e focados em resolver genuinamente a intenção de busca do usuário de {pais}, recomendando inteligentemente produtos do {marketplace}."
         )
+        
         prompt_usuario = (
-            f"Com base nestes dados:\n{dados_criacao}\n\n"
-            "Crie um artigo completo estruturado com:\n"
-            "1. Título otimizado.\n"
-            "2. Introdução focada em resolver uma dor/desejo.\n"
-            "3. Corpo detalhado com recomendações de produtos do {marketplace}.\n"
-            "4. Chamada para Ação (CTA) estratégica para os links de afiliado."
+            f"Com base nestes dados estratégicos:\n{dados_criacao}\n\n"
+            f"Escreva um artigo completo em {idioma} contendo:\n"
+            "1. Introdução engajadora alinhada à intenção de busca.\n"
+            "2. Desenvolvimento rico em detalhes, dividido em subtópicos (H2/H3) que facilitam a varredura dos robôs de indexação do Google.\n"
+            "3. Seção de recomendações direcionando para as melhores opções do {marketplace}.\n"
+            "4. Uma Chamada para Ação (CTA) persuasiva e natural para conversão de afiliados.\n"
+            "Retorne o conteúdo estruturado pronto para publicação em HTML básico (com tags h2, p, etc.)."
         )
         
         resposta_artigo = client.chat.completions.create(
@@ -196,27 +202,27 @@ def executar_robo_global():
         conteudo_gerado = resposta_artigo.choices[0].message.content
         data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # 4. Publicação Automática no Blog recém-criado
+        # 4. Publicação Automática
         status_pub = "Gerado no CSV"
         if blog_id:
             if publicar_no_blogger(titulo_artigo, conteudo_gerado, blog_id):
                 status_pub = f"Blog Criado e Post Publicado (ID: {blog_id})"
 
-        # 5. Salvamento no CSV e Backup no GitHub
+        # 5. Salvamento e Sincronização
         nome_arquivo = "artigos_afiliados_global.csv"
         arquivo_existe = os.path.exists(nome_arquivo)
         
         with open(nome_arquivo, mode="a", newline="", encoding="utf-8") as f:
             escritor = csv.writer(f)
             if not arquivo_existe:
-                escritor.writerow(["Data/Hora", "País / Idioma", "Estratégia e Subnicho", "Conteúdo", "Status"])
+                escritor.writerow(["Data/Hora", "País / Idioma", "Estratégia e Horário", "Conteúdo", "Status"])
             escritor.writerow([data_atual, f"{pais} ({idioma})", dados_criacao, conteudo_gerado, status_pub])
             
         executar_git_push()
-        print("Ciclo 100% automatizado concluído com sucesso!")
+        print("Ciclo otimizado de indexação e conversão concluído com sucesso!")
 
     except Exception as e:
-        print(f"Erro crítico no fluxo automatizado: {e}")
+        print(f"Erro crítico no fluxo: {e}")
         raise e
 
 if __name__ == "__main__":
