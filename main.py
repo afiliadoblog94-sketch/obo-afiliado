@@ -18,7 +18,7 @@ def executar_robo_afiliado():
         raise ValueError("ERRO: Credenciais do Google OAuth não configuradas nos segredos.")
 
     try:
-        # 2. Geração de Conteúdo via Groq
+        # 2. Geração de Conteúdo via Groq (Padrão Long-Tail | Dor/Desejo | Marca)
         client = Groq(api_key=groq_api_key)
         print("Gerando artigo otimizado para conversão...")
         
@@ -44,8 +44,8 @@ def executar_robo_afiliado():
         print(conteudo_gerado)
         print("------------------------------------")
 
-        # 3. Integração com a Planilha Afiliado
-        print("Conectando ao Google Sheets...")
+        # 3. Conexão e Gravação Direta na Planilha
+        print("Conectando ao Google Sheets e salvando dados...")
         credentials = Credentials(
             None,
             client_id=client_id,
@@ -54,13 +54,13 @@ def executar_robo_afiliado():
         )
         gc = gspread.authorize(credentials)
         
-        # Abre a planilha pelo nome exato
-        planilha = gc.open("Planilha Afiliado")
+        # Abre a sua planilha cadastrada no Google Drive
+        planilha = gc.open("Planilha Afiliado")[cite: 1]
         aba = planilha.sheet1
         
-        # Adiciona os dados na linha: Data, Conteúdo Gerado e Status
+        # Adiciona a linha com a data, o texto gerado e o status
         aba.append_row([data_atual, conteudo_gerado, "Gerado por IA", "Pendente Publicação"])
-        print("Dados gravados com sucesso na planilha 'Planilha Afiliado'!")
+        print("Dados gravados com sucesso na 'Planilha Afiliado'[cite: 1]!")
 
         print("Ciclo executado com sucesso absoluto!")
 
