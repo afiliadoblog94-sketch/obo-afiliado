@@ -1,6 +1,6 @@
+import json
 import os
 import random
-import json
 import requests
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -23,17 +23,18 @@ NICHOS = [
     "Casa Inteligente e Eletrodomésticos (Air Fryers, Robôs Aspiradores, Cafeteiras)",
     "Periféricos Gamer e Setup (Teclados Mecânicos, Mouses, Headsets)",
     "Cuidados Pessoais e Saúde (Barbeadores Elétricos, Escovas Rotativas)",
-    "Home Office e Produtividade (Monitores Ergonomicos, Suportes, Cadeiras)"
+    "Home Office e Produtividade (Monitores Ergonomicos, Suportes, Cadeiras)",
 ]
+
 
 def gerar_artigo_groq():
     """Solicita à IA Groq (Llama 3) um artigo completo formatado em HTML."""
     nicho_escolhido = random.choice(NICHOS)
     url = "https://api.groq.com/openai/v1/chat/completions"
-    
+
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
 
     prompt = f"""
@@ -60,11 +61,14 @@ def gerar_artigo_groq():
     payload = {
         "model": "llama-3.3-70b-versatile",
         "messages": [
-            {"role": "system", "content": "Você é um gerador de artigos no formato JSON estrito."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "Você é um gerador de artigos no formato JSON estrito.",
+            },
+            {"role": "user", "content": prompt},
         ],
         "temperature": 0.7,
-        "response_format": {"type": "json_object"}
+        "response_format": {"type": "json_object"},
     }
 
     response = requests.post(url, headers=headers, json=payload)
@@ -82,16 +86,12 @@ def publicar_no_blogger(titulo, conteudo):
         refresh_token=GOOGLE_REFRESH_TOKEN,
         client_id=GOOGLE_CLIENT_ID,
         client_secret=GOOGLE_CLIENT_SECRET,
-        token_uri="https://oauth2.googleapis.com/token"
+        token_uri="https://oauth2.googleapis.com/token",
     )
 
     service = build("blogger", "v3", credentials=creds)
 
-    body = {
-        "kind": "blogger#post",
-        "title": titulo,
-        "content": conteudo
-    }
+    body = {"kind": "blogger#post", "title": titulo, "content": conteudo}
 
     post = service.posts().insert(blogId=BLOG_ID, body=body).execute()
     return post.get("url")
