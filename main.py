@@ -11,7 +11,7 @@ client = genai.Client(api_key=api_key)
 def testar_robo():
     print("Iniciando o Robô Afiliado...")
     resposta = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-1.5-flash",
         contents="Escreva uma introdução curta e persuasiva para um artigo de tecnologia sobre placas de vídeo.",
     )
     print("\n--- Teste de Geração com Gemini ---")
