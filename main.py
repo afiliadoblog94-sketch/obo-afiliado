@@ -60,8 +60,9 @@ def executar_robo_autonomo():
             "Você é um redator sênior de SEO, especialista em copywriting para conversão em e-commerce (Amazon Brasil e Mercado Livre). "
             "Escreva artigos detalhados, persuasivos, focados na dor/desejo do público brasileiro."
         )
+        
         prompt_usuario = (
-            fCom base nestes dados estratégicos gerados:\n{dados_criacao}\n\n"
+            f"Com base nestes dados estratégicos gerados:\n{dados_criacao}\n\n"
             "Crie um artigo completo para blog estruturado estritamente com:\n"
             "1. Um título longo (long-tail) otimizado para SEO.\n"
             "2. Introdução focada em prender a atenção e resolver uma dor/desejo imediata.\n"
