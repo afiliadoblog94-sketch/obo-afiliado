@@ -1,18 +1,15 @@
 name: Executar Robo Afiliado Global
 
 on:
-  push:
-    branches: [ main, master ]
   schedule:
-    - cron: '0 12 * * *' # Executa automaticamente todos os dias às 12:00 UTC (9h no horário de Brasília)
-  workflow_dispatch: # Permite disparar manualmente pela aba Actions no GitHub
+    - cron: '0 12 * * *' # Executa diariamente às 09:00 (Horário de Brasília)
+  workflow_dispatch:     # Permite clicar e executar manualmente na aba Actions
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout do Repositório
+      - name: Baixar Código
         uses: actions/checkout@v4
 
       - name: Configurar Python
@@ -22,14 +19,15 @@ jobs:
 
       - name: Instalar Dependências
         run: |
-          pip install --upgrade pip
-          pip install google-auth google-auth-oauthlib google-api-python-client requests google-genai
+          python -m pip install --upgrade pip
+          pip install requests google-api-python-client google-auth google-auth-oauthlib
 
       - name: Executar Robô
         env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
-          AFFILIATE_TAG: ${{ secrets.AFFILIATE_TAG }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SMART_AFFILIATE_LINK: ${{ secrets.SMART_AFFILIATE_LINK }}
+          BLOGGER_BLOG_ID: ${{ secrets.BLOGGER_BLOG_ID }}
         run: python main.py
