@@ -1,47 +1,46 @@
 import os
-import time
-from google import genai
-from google.genai.errors import ClientError
+from openai import OpenAI
 
 def testar_robo():
-    print("Iniciando o Robô Afiliado...")
+    print("Iniciando o Robô Afiliado com ChatGPT...")
     
-    api_key = os.environ.get("GEMINI_API_KEY")
+    # Validando se a chave secreta da OpenAI existe no ambiente do GitHub
+    api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        raise ValueError("ERRO: A chave GEMINI_API_KEY não foi encontrada nos segredos do GitHub.")
+        raise ValueError("ERRO: A chave OPENAI_API_KEY não foi encontrada nos segredos do GitHub.")
 
-    client = genai.Client(api_key=api_key)
+    # Validando se as credenciais do Google Client continuam disponíveis
+    client_id = os.environ.get("GOOGLE_CLIENT_ID")
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
     
-    max_tentativas = 3
-    tentativa = 1
+    if client_id and client_secret:
+        print("Credenciais do Google Client ID e Secret carregadas com sucesso.")
+    else:
+        print("Aviso: Credenciais do Google Client opcionais não totalmente preenchidas.")
 
-    while tentativa <= max_tentativas:
-        try:
-            print(f"Tentativa {tentativa} de conexão com o Gemini...")
-            resposta = client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents="Escreva uma introdução curta, otimizada para SEO e persuasiva para um artigo de tecnologia sobre placas de vídeo custo-benefício.",
-            )
-            
-            print("\n--- Teste de Geração com Gemini ---")
-            print(resposta.text)
-            print("-----------------------------------")
-            print("Robô conectado, testado e funcionando com sucesso absoluto!")
-            return
-            
-        except ClientError as e:
-            if e.code == 429:
-                print(f"Limite da API atingido (Erro 429). Aguardando 30 segundos antes de tentar novamente... (Tentativa {tentativa}/{max_tentativas})")
-                time.sleep(30)
-                tentativa += 1
-            else:
-                print(f"Erro da API do Gemini: {e}")
-                raise e
-        except Exception as e:
-            print(f"Erro crítico inesperado: {e}")
-            raise e
-
-    raise Exception("Falha após várias tentativas devido ao limite de cota da API (Erro 429).")
+    try:
+        # Inicializando o cliente oficial da OpenAI
+        client = OpenAI(api_key=api_key)
+        
+        print("Conectando ao modelo GPT para gerar conteúdo de tecnologia...")
+        resposta = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Você é um especialista em marketing de afiliados e tecnologia."},
+                {"role": "user", "content": "Escreva uma introdução curta, otimizada para SEO e persuasiva para um artigo de tecnologia sobre placas de vídeo custo-benefício."}
+            ]
+        )
+        
+        texto_gerado = resposta.choices[0].message.content
+        
+        print("\n--- Teste de Geração com ChatGPT ---")
+        print(texto_gerado)
+        print("-------------------------------------")
+        print("Robô conectado, testado e funcionando com sucesso absoluto via OpenAI!")
+        
+    except Exception as e:
+        print(f"Erro crítico ao comunicar com a API da OpenAI: {e}")
+        raise e
 
 if __name__ == "__main__":
     testar_robo()
