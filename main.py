@@ -15,10 +15,10 @@ def executar_robo_afiliado():
     if not groq_api_key:
         raise ValueError("ERRO: GROQ_API_KEY não configurada.")
     if not client_id or not client_secret:
-        raise ValueError("ERRO: Credenciais do Google OAuth não configuradas nos segredos.")
+        raise ValueError("ERRO: Credenciais do Google OAuth não configuradas.")
 
     try:
-        # 2. Geração de Conteúdo via Groq (Padrão Long-Tail | Dor/Desejo | Marca)
+        # 2. Geração de Conteúdo via Groq
         client = Groq(api_key=groq_api_key)
         print("Gerando artigo otimizado para conversão...")
         
@@ -44,23 +44,26 @@ def executar_robo_afiliado():
         print(conteudo_gerado)
         print("------------------------------------")
 
-        # 3. Conexão e Gravação Direta na Planilha
-        print("Conectando ao Google Sheets e salvando dados...")
+        # 3. Conexão via OAuth no Google Sheets
+        print("Conectando ao Google Sheets via OAuth...")
+        
+        # Estrutura de credenciais OAuth para ambiente automatizado
         credentials = Credentials(
-            None,
+            token=None,
+            refresh_token=os.environ.get("GOOGLE_REFRESH_TOKEN"),
+            token_uri="https://oauth2.googleapis.com/token",
             client_id=client_id,
-            client_secret=client_secret,
-            token_uri="https://oauth2.googleapis.com/token"
+            client_secret=client_secret
         )
+        
         gc = gspread.authorize(credentials)
         
-        # Abre a sua planilha cadastrada no Google Drive
-        planilha = gc.open("Planilha Afiliado")[cite: 1]
+        # Abre a planilha pelo nome exato
+        planilha = gc.open("Planilha Afiliado")
         aba = planilha.sheet1
         
-        # Adiciona a linha com a data, o texto gerado e o status
         aba.append_row([data_atual, conteudo_gerado, "Gerado por IA", "Pendente Publicação"])
-        print("Dados gravados com sucesso na 'Planilha Afiliado'[cite: 1]!")
+        print("Dados gravados com sucesso na planilha!")
 
         print("Ciclo executado com sucesso absoluto!")
 
