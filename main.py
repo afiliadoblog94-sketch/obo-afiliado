@@ -1,146 +1,114 @@
 import os
-import json
 import random
-from google import genai
+import json
+import requests
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
-# ==========================================
-# CONFIGURAÇÕES DE MERCADOS E AFILIADOS
-# ==========================================
-BLOGGER_API_VERSION = "v3"
-CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-REFRESH_TOKEN = os.getenv("GOOGLE_REFRESH_TOKEN")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# --- CONFIGURAÇÕES E VARIÁVEIS DE AMBIENTE ---
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_REFRESH_TOKEN = os.getenv("GOOGLE_REFRESH_TOKEN")
 
-# Mapeamento de Mercados: País -> Idioma -> Link do País -> Subnichos
-MERCADOS = [
-    {
-        "pais": "Brasil",
-        "idioma": "Português",
-        "moeda": "R$",
-        "affiliate_tag": os.getenv("AFFILIATE_TAG_BR", "https://seu-link-afiliado-br.com"),
-        "subnichos": [
-            "Fones de Ouvido Bluetooth",
-            "Smartwatches para Treino",
-            "Aspiradores de Pó Robô",
-            "Air Fryers Sem Óleo"
-        ]
-    },
-    {
-        "pais": "Estados Unidos",
-        "idioma": "Inglês",
-        "moeda": "$",
-        "affiliate_tag": os.getenv("AFFILIATE_TAG_US", "https://seu-link-afiliado-us.com"),
-        "subnichos": [
-            "Wireless Bluetooth Earbuds",
-            "Fitness Smartwatches",
-            "Robot Vacuum Cleaners",
-            "Air Fryers"
-        ]
-    },
-    {
-        "pais": "Espanha",
-        "idioma": "Espanhol",
-        "moeda": "€",
-        "affiliate_tag": os.getenv("AFFILIATE_TAG_ES", "https://seu-link-afiliado-es.com"),
-        "subnichos": [
-            "Auriculares Inalámbricos Bluetooth",
-            "Relojes Inteligentes Deportivos",
-            "Aspiradores Robot",
-            "Freidoras sin Aceite"
-        ]
-    }
+# Link de afiliado com fallback padrão
+AFFILIATE_LINK = os.getenv("SMART_AFFILIATE_LINK", "https://www.amazon.com.br/?tag=meublogglobal-20")
+
+# ID do seu Blog no Blogger
+BLOG_ID = os.getenv("BLOGGER_BLOG_ID", "2641162560341629410")
+
+# Categorias para variação diária de posts
+NICHOS = [
+    "Tecnologia e Eletrônicos (Smartphones, Smartwatches, Fones TWS)",
+    "Casa Inteligente e Eletrodomésticos (Air Fryers, Robôs Aspiradores, Cafeteiras)",
+    "Periféricos Gamer e Setup (Teclados Mecânicos, Mouses, Headsets)",
+    "Cuidados Pessoais e Saúde (Barbeadores Elétricos, Escovas Rotativas)",
+    "Home Office e Produtividade (Monitores Ergonomicos, Suportes, Cadeiras)"
 ]
 
-
-def get_blogger_service():
-    """Autentica na API do Blogger usando o Refresh Token."""
-    credentials = Credentials(
-        token=None,
-        refresh_token=REFRESH_TOKEN,
-        client_id=CLIENT_ID,
-        client_secret=CLIENT_SECRET,
-        token_uri="https://oauth2.googleapis.com/token"
-    )
-    return build("blogger", BLOGGER_API_VERSION, credentials=credentials)
-
-
-def gerar_conteudo_gemini(mercado, subnicho):
-    """Gera um artigo no idioma e moeda corretos do país selecionado."""
-    client = genai.Client(api_key=GEMINI_API_KEY)
+def gerar_artigo_groq():
+    """Solicita à IA Groq (Llama 3) um artigo completo formatado em HTML."""
+    nicho_escolhido = random.choice(NICHOS)
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
 
     prompt = f"""
-    Você é um redator profissional de SEO e Copywriting focado em marketing de afiliados.
-    Escreva um artigo persuasivo e altamente otimizado sobre o subnicho '{subnicho}'.
+    Você é um redator profissional especializado em guias de compra e reviews de produtos para o mercado brasileiro.
+    Escreva um artigo de blog altamente persuasivo, otimizado para SEO, focado na categoria: {nicho_escolhido}.
 
-    CONTEXTO DO MERCADO:
-    - País Alvo: {mercado['pais']}
-    - Idioma OBRIGATÓRIO do Artigo: {mercado['idioma']}
-    - Símbolo da Moeda Local: {mercado['moeda']}
+    DIRETRIZES OBRIGATÓRIAS:
+    1. Crie um Título chamativo que desperte curiosidade de compra.
+    2. Desenvolva o texto em HTML estruturado contendo <h2>, <h3>, <p>, <ul> e <li>.
+    3. Inclua pelo menos 2 botões de CTA (Call to Action) em HTML com visual moderno destacando o link de afiliado.
+       O link do botão DEVE SER EXATAMENTE: {AFFILIATE_LINK}
+       Exemplo de botão HTML:
+       <div style="text-align: center; margin: 30px 0;">
+         <a href="{AFFILIATE_LINK}" target="_blank" rel="nofollow noopener" style="background-color: #FF9900; color: #111111; padding: 15px 30px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block; font-size: 18px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">👉 VER MELHORES OFERTAS NA AMAZON</a>
+       </div>
 
-    Regras OBRIGATÓRIAS:
-    1. Retorne a resposta estritamente no formato JSON com as chaves: "titulo" e "conteudo_html".
-    2. O artigo deve ser escrito inteiramente no idioma {mercado['idioma']}.
-    3. Use HTML nativo simples para o Blogger (<h3>, <p>, <ul>, <li>, <strong>).
-    4. NÃO inclua <html>, <head>, <body> ou ```html.
-    5. Insira a seguinte chamada para ação (CTA) formatada exatamente com este link:
-       <p style="text-align: center; margin: 25px 0;"><a href="{mercado['affiliate_tag']}" target="_blank" rel="nofollow" style="background-color: #28a745; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">👉 Check Best Deals & Updated Prices</a></p>
-       (Adapte o texto do botão acima para o idioma {mercado['idioma']}).
+    Responda ESTRITAMENTE em formato JSON no seguinte modelo:
+    {{
+      "titulo": "Título do artigo aqui",
+      "conteudo": "Conteúdo HTML aqui..."
+    }}
     """
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt,
-        config={
-            "response_mime_type": "application/json"
-        }
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": [
+            {"role": "system", "content": "Você é um gerador de artigos no formato JSON estrito."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.7,
+        "response_format": {"type": "json_object"}
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+
+    dados = response.json()
+    resultado = json.loads(dados["choices"][0]["message"]["content"])
+    return resultado["titulo"], resultado["conteudo"]
+
+
+def publicar_no_blogger(titulo, conteudo):
+    """Autentica na API do Blogger e publica o novo post."""
+    creds = Credentials(
+        token=None,
+        refresh_token=GOOGLE_REFRESH_TOKEN,
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        token_uri="https://oauth2.googleapis.com/token"
     )
 
-    dados = json.loads(response.text)
-    return dados["titulo"], dados["conteudo_html"]
+    service = build("blogger", "v3", credentials=creds)
 
+    body = {
+        "kind": "blogger#post",
+        "title": titulo,
+        "content": conteudo
+    }
 
-def executar_robo():
-    if not all([CLIENT_ID, CLIENT_SECRET, REFRESH_TOKEN, GEMINI_API_KEY]):
-        print("Erro: Variáveis de ambiente essenciais não foram configuradas.")
-        return
-
-    # 1. Escolhe o país/mercado primeiro
-    mercado_selecionado = random.choice(MERCADOS)
-    # 2. Escolhe um subnicho adequado para o idioma do país
-    subnicho_selecionado = random.choice(mercado_selecionado["subnichos"])
-
-    print(f"🌍 País Selecionado: {mercado_selecionado['pais']} ({mercado_selecionado['idioma']})")
-    print(f"📦 Subnicho: {subnicho_selecionado}")
-    print(f"🔗 Link de Afiliado Utilizado: {mercado_selecionado['affiliate_tag']}")
-
-    try:
-        service = get_blogger_service()
-        blogs = service.blogs().listByUser(userId="self").execute()
-        
-        if not blogs.get("items"):
-            print("Erro: Nenhum blog encontrado.")
-            return
-
-        blog_id = blogs["items"][0]["id"]
-
-        print("Gerando artigo com IA...")
-        titulo, conteudo_html = gerar_conteudo_gemini(mercado_selecionado, subnicho_selecionado)
-
-        body = {
-            "title": titulo,
-            "content": conteudo_html
-        }
-
-        print("Publicando no Blogger...")
-        post = service.posts().insert(blogId=blog_id, body=body).execute()
-        print(f"🚀 Artigo publicado com sucesso no idioma {mercado_selecionado['idioma']}: {post.get('url')}")
-
-    except Exception as e:
-        print(f"❌ Erro na execução: {e}")
+    post = service.posts().insert(blogId=BLOG_ID, body=body).execute()
+    return post.get("url")
 
 
 if __name__ == "__main__":
-    executar_robo()
+    print("🚀 Iniciando execução do Robô Afiliado...")
+    try:
+        print("✍️ Gerando artigo persuasivo na Groq...")
+        titulo, conteudo = gerar_artigo_groq()
+        print(f"📌 Título gerado: {titulo}")
+
+        print(f"📤 Publicando no blog (ID: {BLOG_ID})...")
+        url_post = publicar_no_blogger(titulo, conteudo)
+
+        print(f"✅ SUCESSO! Artigo publicado em: {url_post}")
+
+    except Exception as erro:
+        print(f"❌ Ocorreu um erro na execução: {erro}")
+        raise erro
