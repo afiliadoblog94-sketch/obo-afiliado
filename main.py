@@ -6,27 +6,53 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 # ==========================================
-# CONFIGURAÇÕES DA OPERAÇÃO
+# CONFIGURAÇÕES DE MERCADOS E AFILIADOS
 # ==========================================
 BLOGGER_API_VERSION = "v3"
 CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 REFRESH_TOKEN = os.getenv("GOOGLE_REFRESH_TOKEN")
-AFFILIATE_TAG = os.getenv("AFFILIATE_TAG", "#")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Lista de subnichos para rotação automática
-SUBNICHOS = [
-    "Fones de Ouvido Bluetooth com Cancelamento de Ruído",
-    "Smartwatches e Relógios Inteligentes para Treino",
-    "Aspiradores de Pó Robô Inteligentes",
-    "Caixas de Som Portáteis à Prova D'água",
-    "Projetores Portáteis para Home Cinema",
-    "Teclados Mecânicos Sem Fio para Trabalho e Jogos",
-    "Air Fryers e Fritadeiras Sem Óleo"
+# Mapeamento de Mercados: País -> Idioma -> Link do País -> Subnichos
+MERCADOS = [
+    {
+        "pais": "Brasil",
+        "idioma": "Português",
+        "moeda": "R$",
+        "affiliate_tag": os.getenv("AFFILIATE_TAG_BR", "https://seu-link-afiliado-br.com"),
+        "subnichos": [
+            "Fones de Ouvido Bluetooth",
+            "Smartwatches para Treino",
+            "Aspiradores de Pó Robô",
+            "Air Fryers Sem Óleo"
+        ]
+    },
+    {
+        "pais": "Estados Unidos",
+        "idioma": "Inglês",
+        "moeda": "$",
+        "affiliate_tag": os.getenv("AFFILIATE_TAG_US", "https://seu-link-afiliado-us.com"),
+        "subnichos": [
+            "Wireless Bluetooth Earbuds",
+            "Fitness Smartwatches",
+            "Robot Vacuum Cleaners",
+            "Air Fryers"
+        ]
+    },
+    {
+        "pais": "Espanha",
+        "idioma": "Espanhol",
+        "moeda": "€",
+        "affiliate_tag": os.getenv("AFFILIATE_TAG_ES", "https://seu-link-afiliado-es.com"),
+        "subnichos": [
+            "Auriculares Inalámbricos Bluetooth",
+            "Relojes Inteligentes Deportivos",
+            "Aspiradores Robot",
+            "Freidoras sin Aceite"
+        ]
+    }
 ]
-
-PAIS = "Brasil"
 
 
 def get_blogger_service():
@@ -41,27 +67,27 @@ def get_blogger_service():
     return build("blogger", BLOGGER_API_VERSION, credentials=credentials)
 
 
-def gerar_conteudo_gemini(subnicho, pais):
-    """Gera um artigo único formatado em HTML utilizando o Gemini."""
+def gerar_conteudo_gemini(mercado, subnicho):
+    """Gera um artigo no idioma e moeda corretos do país selecionado."""
     client = genai.Client(api_key=GEMINI_API_KEY)
 
     prompt = f"""
-    Você é um redator profissional de SEO e Copywriting especializado em avaliações de produtos e marketing de afiliados.
-    Escreva um artigo persuasivo e informativo sobre a escolha de produtos no subnicho '{subnicho}' focado no público de {pais}.
+    Você é um redator profissional de SEO e Copywriting focado em marketing de afiliados.
+    Escreva um artigo persuasivo e altamente otimizado sobre o subnicho '{subnicho}'.
+
+    CONTEXTO DO MERCADO:
+    - País Alvo: {mercado['pais']}
+    - Idioma OBRIGATÓRIO do Artigo: {mercado['idioma']}
+    - Símbolo da Moeda Local: {mercado['moeda']}
 
     Regras OBRIGATÓRIAS:
-    1. Retorne a resposta estritamente em formato JSON com duas chaves: "titulo" e "conteudo_html".
-    2. O conteúdo deve ser apenas o corpo do artigo formatado em HTML simples para o Blogger (use <h3>, <p>, <ul>, <li>, <strong>).
-    3. NÃO inclua as tags <html>, <head>, <body> ou ```html.
-    4. Adicione um Call to Action (CTA) convincente recomendando a compra e insira o seguinte link exatamente como formatado:
-       <p style="text-align: center; margin: 20px 0;"><a href="{AFFILIATE_TAG}" target="_blank" rel="nofollow" style="background-color: #28a745; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">👉 Clique aqui para ver ofertas atualizadas com desconto</a></p>
-
-    Estrutura do Artigo:
-    - Título atraente otimizado para buscas no Google (SEO Long-Tail).
-    - Introdução engajadora apresentando o problema ou desejo do consumidor.
-    - O que considerar antes de comprar (pontos fortes, durabilidade, tecnologia).
-    - Chamada para ação com o botão/link de afiliado fornecido.
-    - Conclusão objetiva.
+    1. Retorne a resposta estritamente no formato JSON com as chaves: "titulo" e "conteudo_html".
+    2. O artigo deve ser escrito inteiramente no idioma {mercado['idioma']}.
+    3. Use HTML nativo simples para o Blogger (<h3>, <p>, <ul>, <li>, <strong>).
+    4. NÃO inclua <html>, <head>, <body> ou ```html.
+    5. Insira a seguinte chamada para ação (CTA) formatada exatamente com este link:
+       <p style="text-align: center; margin: 25px 0;"><a href="{mercado['affiliate_tag']}" target="_blank" rel="nofollow" style="background-color: #28a745; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">👉 Check Best Deals & Updated Prices</a></p>
+       (Adapte o texto do botão acima para o idioma {mercado['idioma']}).
     """
 
     response = client.models.generate_content(
@@ -77,46 +103,44 @@ def gerar_conteudo_gemini(subnicho, pais):
 
 
 def executar_robo():
-    # Validação de credenciais básicas
     if not all([CLIENT_ID, CLIENT_SECRET, REFRESH_TOKEN, GEMINI_API_KEY]):
-        print("Erro: Uma ou mais variáveis de ambiente (Secrets) não foram configuradas no GitHub.")
+        print("Erro: Variáveis de ambiente essenciais não foram configuradas.")
         return
 
-    # Sorteia um subnicho da lista a cada execução
-    subnicho_atual = random.choice(SUBNICHOS)
-    print(f"Subnicho selecionado para esta execução: {subnicho_atual}")
+    # 1. Escolhe o país/mercado primeiro
+    mercado_selecionado = random.choice(MERCADOS)
+    # 2. Escolhe um subnicho adequado para o idioma do país
+    subnicho_selecionado = random.choice(mercado_selecionado["subnichos"])
+
+    print(f"🌍 País Selecionado: {mercado_selecionado['pais']} ({mercado_selecionado['idioma']})")
+    print(f"📦 Subnicho: {subnicho_selecionado}")
+    print(f"🔗 Link de Afiliado Utilizado: {mercado_selecionado['affiliate_tag']}")
 
     try:
-        # Autenticação no Blogger
         service = get_blogger_service()
         blogs = service.blogs().listByUser(userId="self").execute()
         
         if not blogs.get("items"):
-            print("Erro: Nenhum blog encontrado na conta cadastrada.")
+            print("Erro: Nenhum blog encontrado.")
             return
 
         blog_id = blogs["items"][0]["id"]
-        blog_nome = blogs["items"][0]["name"]
-        print(f"Conectado ao blog: '{blog_nome}' (ID: {blog_id})")
 
-        # Geração de conteúdo via Gemini
-        print("Solicitando geração de artigo para a API do Gemini...")
-        titulo, conteudo_html = gerar_conteudo_gemini(subnicho_atual, PAIS)
+        print("Gerando artigo com IA...")
+        titulo, conteudo_html = gerar_conteudo_gemini(mercado_selecionado, subnicho_selecionado)
 
-        # Publicação no Blogger
         body = {
             "title": titulo,
             "content": conteudo_html
         }
 
-        print("Publicando artigo no Blogger...")
+        print("Publicando no Blogger...")
         post = service.posts().insert(blogId=blog_id, body=body).execute()
-        print(f"🚀 Sucesso! Artigo publicado: {post.get('url')}")
+        print(f"🚀 Artigo publicado com sucesso no idioma {mercado_selecionado['idioma']}: {post.get('url')}")
 
     except Exception as e:
-        print(f"❌ Ocorreu um erro durante a execução: {e}")
+        print(f"❌ Erro na execução: {e}")
 
 
 if __name__ == "__main__":
-    print("--- Iniciando Robô Afiliado Global com IA Gemini ---")
     executar_robo()
