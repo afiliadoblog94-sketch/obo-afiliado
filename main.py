@@ -1,24 +1,15 @@
 import os
-from groq import Groq
+import csv
 from datetime import datetime
-import gspread
-from google.oauth2.credentials import Credentials
+from groq import Groq
 
 def executar_robo_afiliado():
     print("Iniciando o Ciclo Automatizado do Robô Afiliado...")
     
-    # 1. Validação de Segredos
+    # 1. Validação da Chave da Groq
     groq_api_key = os.environ.get("GROQ_API_KEY")
-    client_id = os.environ.get("GOOGLE_CLIENT_ID")
-    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
-    refresh_token = os.environ.get("GOOGLE_REFRESH_TOKEN")
-    
     if not groq_api_key:
-        raise ValueError("ERRO: GROQ_API_KEY não configurada.")
-    if not client_id or not client_secret:
-        raise ValueError("ERRO: Credenciais do Google OAuth não configuradas.")
-    if not refresh_token:
-        raise ValueError("ERRO: GOOGLE_REFRESH_TOKEN não configurado nos Secrets do GitHub.")
+        raise ValueError("ERRO: GROQ_API_KEY não configurada nos Secrets do GitHub.")
 
     try:
         # 2. Geração de Conteúdo via Groq
@@ -47,26 +38,20 @@ def executar_robo_afiliado():
         print(conteudo_gerado)
         print("------------------------------------")
 
-        # 3. Conexão e Gravação na Planilha
-        print("Conectando ao Google Sheets...")
+        # 3. Salvando os dados localmente no arquivo CSV
+        nome_arquivo = "artigos_gerados.csv"
+        arquivo_existe = os.path.exists(nome_arquivo)
         
-        credentials = Credentials(
-            token=None,
-            refresh_token=refresh_token,
-            token_uri="https://oauth2.googleapis.com/token",
-            client_id=client_id,
-            client_secret=client_secret
-        )
-        
-        gc = gspread.authorize(credentials)
-        
-        # Abre a planilha pelo nome exato
-        planilha = gc.open("Planilha Afiliado")
-        aba = planilha.sheet1
-        
-        aba.append_row([data_atual, conteudo_gerado, "Gerado por IA", "Pendente Publicação"])
-        print("Dados gravados com sucesso na planilha!")
-
+        print(f"Salvando dados no arquivo '{nome_arquivo}'...")
+        with open(nome_arquivo, mode="a", newline="", encoding="utf-8") as f:
+            escritor = csv.writer(f)
+            # Se o arquivo for novo, escrevemos o cabeçalho
+            if not arquivo_existe:
+                escritor.writerow(["Data/Hora", "Conteúdo Gerado", "Status"])
+            
+            escritor.writerow([data_atual, conteudo_gerado, "Pendente Publicação"])
+            
+        print("Dados gravados com sucesso no arquivo CSV!")
         print("Ciclo executado com sucesso absoluto!")
 
     except Exception as e:
