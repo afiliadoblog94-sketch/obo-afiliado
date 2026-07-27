@@ -17,7 +17,7 @@ jobs:
 
       - name: Instalar dependencias
         run: |
-          pip install google-generativeai
+          pip install google-genai
 
       - name: Rodar script principal
         env:
